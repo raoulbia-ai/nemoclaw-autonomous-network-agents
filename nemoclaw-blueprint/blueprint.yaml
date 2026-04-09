@@ -1,0 +1,82 @@
+# Ireland Network Agents — NemoClaw Blueprint
+#
+# Sandbox-only architecture. Three autonomous agents (SENTINEL, ORACLE,
+# ARCHITECT) operating a simulated Irish 5G network inside OpenShell.
+#
+# LLM inference is routed to an OpenAI-compatible endpoint configured at
+# `nemoclaw onboard` time via the NEMOCLAW_* environment variables (see
+# README Quick Start and `.env.example`).
+
+version: "0.1.0"
+min_openshell_version: "0.1.0"
+
+profiles:
+  - default
+
+description: |
+  Three autonomous agents operating a simulated Irish 5G network.
+  Inference routed to a user-supplied OpenAI-compatible endpoint.
+
+components:
+  sandbox:
+    # openshell sandbox create --from accepts a Dockerfile path.
+    # nemoclaw onboard must be run from the project root for this to resolve.
+    image: "./Dockerfile"
+    name: "ireland-network"
+    forward_ports:
+      - 8090
+
+  inference:
+    profiles:
+      default:
+        provider_type: "openai"
+        provider_name: "compatible-endpoint"
+        # Override at onboard time with NEMOCLAW_ENDPOINT_URL / NEMOCLAW_MODEL.
+        endpoint: "https://api.openai.com"
+        model: "gpt-4o-mini"
+        credential_env: "COMPATIBLE_API_KEY"
+        credential_default: "dummy"
+
+  policy:
+    additions:
+      weather_apis:
+        name: weather-data
+        endpoints:
+          - host: www.met.ie
+            port: 443
+            protocol: rest
+            enforcement: enforce
+            rules:
+              - allow:
+                  method: GET
+                  path: /**
+          - host: api.open-meteo.com
+            port: 443
+            protocol: rest
+            enforcement: enforce
+            rules:
+              - allow:
+                  method: GET
+                  path: /**
+      events_api:
+        name: ticketmaster
+        endpoints:
+          - host: app.ticketmaster.com
+            port: 443
+            protocol: rest
+            enforcement: enforce
+            rules:
+              - allow:
+                  method: GET
+                  path: /**
+      traffic_api:
+        name: tomtom-traffic
+        endpoints:
+          - host: api.tomtom.com
+            port: 443
+            protocol: rest
+            enforcement: enforce
+            rules:
+              - allow:
+                  method: GET
+                  path: /**

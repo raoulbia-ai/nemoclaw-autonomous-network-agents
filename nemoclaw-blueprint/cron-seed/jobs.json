@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "sentinel-001",
+      "name": "sentinel",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "cron": "*/5 * * * *",
+        "tz": ""
+      },
+      "sessionTarget": "isolated",
+      "announce": false,
+      "delivery": {
+        "mode": "none",
+        "channel": "none"
+      },
+      "payload": {
+        "kind": "agentTurn",
+        "message": "/elevated full\nYou are SENTINEL. Your playbook is SENTINEL-FAST.md \u2014 read it and run your cycle. MEMORY.md has context.",
+        "model": "inference/openai/gpt-oss-120b",
+        "timeoutSeconds": 600
+      }
+    },
+    {
+      "id": "oracle-001",
+      "name": "oracle",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "cron": "*/15 * * * *",
+        "tz": ""
+      },
+      "sessionTarget": "isolated",
+      "announce": false,
+      "delivery": {
+        "mode": "none",
+        "channel": "none"
+      },
+      "payload": {
+        "kind": "agentTurn",
+        "message": "/elevated full\nYou are ORACLE. Your playbook is ORACLE.md \u2014 read it and run your cycle. MEMORY.md has context.",
+        "model": "inference/openai/gpt-oss-120b",
+        "timeoutSeconds": 900
+      }
+    },
+    {
+      "id": "architect-001",
+      "name": "architect",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "cron": "*/30 * * * *",
+        "tz": ""
+      },
+      "sessionTarget": "isolated",
+      "announce": false,
+      "delivery": {
+        "mode": "none",
+        "channel": "none"
+      },
+      "payload": {
+        "kind": "agentTurn",
+        "message": "/elevated full\nYou are ARCHITECT. Your playbook is ARCHITECT.md \u2014 read it and run your cycle. MEMORY.md has context.",
+        "model": "inference/openai/gpt-oss-120b",
+        "timeoutSeconds": 1200
+      }
+    }
+  ]
+}

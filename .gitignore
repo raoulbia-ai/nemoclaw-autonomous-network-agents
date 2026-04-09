@@ -1,0 +1,21 @@
+node_modules/
+*.env
+.env
+*.log
+.DS_Store
+
+# CA certs — place your own if using a private CA
+network/certs/*.crt
+nemoclaw-blueprint/project-files/network/certs/*.crt
+
+# Snapshots — ephemeral agent state pulled from sandbox
+artifacts/
+
+# The Claude Code per-project config — personal, not part of the project
+.claude/
+
+# Internal docs — research notes, not for external consumption
+docs/internal/
+
+# Project-specific AI assistant config
+CLAUDE.md

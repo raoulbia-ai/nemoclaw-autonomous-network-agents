@@ -1,0 +1,7 @@
+{
+  "name": "ireland-network",
+  "version": "0.2.0",
+  "description": "Schema-faithful mock of a 3GPP-shaped Irish 5G telecom network. Zero npm dependencies — pure node stdlib.",
+  "main": "server.js",
+  "private": true
+}

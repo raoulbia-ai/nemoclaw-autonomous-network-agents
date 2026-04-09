@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "createdAt": "2026-04-03T09:36:01.820Z",
+  "lastTickAt": "2026-04-07T13:56:22.239Z",
+  "tickCount": 11237,
+  "events": [
+    {
+      "id": "evt-0576",
+      "type": "interference",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-009,ManagedElement=1,GNBDUFunction=1,NRCellDU=41",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-009,ManagedElement=1,GNBDUFunction=1,NRCellDU=42",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-009,ManagedElement=1,GNBDUFunction=1,NRCellDU=43",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-009,ManagedElement=1,GNBDUFunction=1,NRCellDU=44",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-009,ManagedElement=1,GNBDUFunction=1,NRCellDU=45"
+      ],
+      "startedAt": "2026-04-07T02:24:10.207Z",
+      "resolveAt": "2026-04-07T12:56:59.962Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T12:57:17.959Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": null
+    },
+    {
+      "id": "evt-0599",
+      "type": "interference",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-002,ManagedElement=1,GNBDUFunction=1,NRCellDU=9",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-002,ManagedElement=1,GNBDUFunction=1,NRCellDU=7",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-002,ManagedElement=1,GNBDUFunction=1,NRCellDU=6",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-002,ManagedElement=1,GNBDUFunction=1,NRCellDU=8",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-002,ManagedElement=1,GNBDUFunction=1,NRCellDU=10"
+      ],
+      "startedAt": "2026-04-07T05:35:22.391Z",
+      "resolveAt": "2026-04-07T16:29:25.893Z",
+      "resolved": false,
+      "resolvedAt": null,
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": null
+    },
+    {
+      "id": "evt-0600",
+      "type": "interference",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=3",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=2",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=1",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=5",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=4"
+      ],
+      "startedAt": "2026-04-07T05:35:22.391Z",
+      "resolveAt": "2026-04-07T13:02:59.061Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T13:03:06.207Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": null
+    },
+    {
+      "id": "evt-0609",
+      "type": "equipment_fault",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site2-Dublin-South,ManagedElement=1,GNBDUFunction=1,NRCellDU=7"
+      ],
+      "startedAt": "2026-04-07T07:28:28.876Z",
+      "resolveAt": "2026-04-07T15:08:57.851Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T11:57:17.080Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": "ALM-2026-1609"
+    },
+    {
+      "id": "evt-0610",
+      "type": "equipment_fault",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site3-Dublin-West,ManagedElement=1,GNBDUFunction=1,NRCellDU=11"
+      ],
+      "startedAt": "2026-04-07T07:39:40.269Z",
+      "resolveAt": "2026-04-07T15:06:36.043Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T11:57:17.095Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": "ALM-2026-1610"
+    },
+    {
+      "id": "evt-0618",
+      "type": "backhaul_fault",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site1-Dublin-North,ManagedElement=1,GNBDUFunction=1,NRCellDU=1",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site1-Dublin-North,ManagedElement=1,GNBDUFunction=1,NRCellDU=2",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site1-Dublin-North,ManagedElement=1,GNBDUFunction=1,NRCellDU=3",
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site1-Dublin-North,ManagedElement=1,GNBDUFunction=1,NRCellDU=4"
+      ],
+      "startedAt": "2026-04-07T11:06:12.312Z",
+      "resolveAt": "2026-04-07T12:36:53.379Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T12:36:55.997Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": null,
+      "rerouted": true
+    },
+    {
+      "id": "evt-0619",
+      "type": "maintenance",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site1-Dublin-North,ManagedElement=1,GNBDUFunction=1,NRCellDU=1"
+      ],
+      "startedAt": "2026-04-07T12:02:58.796Z",
+      "resolveAt": "2026-04-07T12:53:56.955Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T12:54:22.868Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": null
+    },
+    {
+      "id": "evt-0620",
+      "type": "maintenance",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site3-Dublin-West,ManagedElement=1,GNBDUFunction=1,NRCellDU=10"
+      ],
+      "startedAt": "2026-04-07T12:04:54.924Z",
+      "resolveAt": "2026-04-07T12:32:26.615Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T12:32:33.708Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": null
+    },
+    {
+      "id": "evt-0621",
+      "type": "equipment_fault",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site1-Dublin-North,ManagedElement=1,GNBDUFunction=1,NRCellDU=2"
+      ],
+      "startedAt": "2026-04-07T12:10:15.387Z",
+      "resolveAt": "2026-04-07T18:24:25.912Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T12:31:05.932Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": "ALM-2026-1621"
+    },
+    {
+      "id": "evt-0622",
+      "type": "equipment_fault",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site2-Dublin-South,ManagedElement=1,GNBDUFunction=1,NRCellDU=6"
+      ],
+      "startedAt": "2026-04-07T12:11:42.466Z",
+      "resolveAt": "2026-04-07T15:30:38.963Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T12:31:05.939Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": "ALM-2026-1622"
+    },
+    {
+      "id": "evt-0623",
+      "type": "maintenance",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site1-Dublin-North,ManagedElement=1,GNBDUFunction=1,NRCellDU=1"
+      ],
+      "startedAt": "2026-04-07T12:33:02.724Z",
+      "resolveAt": "2026-04-07T12:53:49.982Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T12:53:53.871Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": null
+    },
+    {
+      "id": "evt-0624",
+      "type": "equipment_fault",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site2-Dublin-South,ManagedElement=1,GNBDUFunction=1,NRCellDU=6"
+      ],
+      "startedAt": "2026-04-07T12:43:43.380Z",
+      "resolveAt": "2026-04-07T15:11:49.659Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T12:48:41.354Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": "ALM-2026-1624"
+    },
+    {
+      "id": "evt-0625",
+      "type": "equipment_fault",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site1-Dublin-North,ManagedElement=1,GNBDUFunction=1,NRCellDU=2"
+      ],
+      "startedAt": "2026-04-07T12:54:51.853Z",
+      "resolveAt": "2026-04-07T18:23:20.696Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T13:00:55.379Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": "ALM-2026-1625"
+    },
+    {
+      "id": "evt-0626",
+      "type": "equipment_fault",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site3-Dublin-West,ManagedElement=1,GNBDUFunction=1,NRCellDU=11"
+      ],
+      "startedAt": "2026-04-07T13:11:50.507Z",
+      "resolveAt": "2026-04-07T19:17:21.728Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T13:30:46.879Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": "ALM-2026-1626"
+    },
+    {
+      "id": "evt-0627",
+      "type": "equipment_fault",
+      "affectedCells": [
+        "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Site1-Dublin-North,ManagedElement=1,GNBDUFunction=1,NRCellDU=4"
+      ],
+      "startedAt": "2026-04-07T13:13:46.530Z",
+      "resolveAt": "2026-04-07T20:41:29.305Z",
+      "resolved": true,
+      "resolvedAt": "2026-04-07T13:30:46.886Z",
+      "ghostAlarm": false,
+      "ghostAlarmExpiresAt": null,
+      "alarmId": "ALM-2026-1627"
+    }
+  ]
+}

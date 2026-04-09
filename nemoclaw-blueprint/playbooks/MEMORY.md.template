@@ -1,0 +1,29 @@
+# NKA Memory — Shared Agent State
+
+Last updated: (not yet started)
+Cycle 0
+
+---
+
+## Network State
+
+- **total_cells**: 266 (seed network — full Ireland)
+- **outlier_count**: 0
+- **elevated_count**: 0
+- **alarm_count**: 0
+- **cross_zone_count**: 0
+- **last_heartbeat_at**: null
+
+## Growth State
+
+- **growth_wave_count**: 0
+- **last_growth_at**: null
+- **growth_target**: 8000
+
+## Chronic Cells
+
+None.
+
+## Recent History
+
+No cycles completed yet.
