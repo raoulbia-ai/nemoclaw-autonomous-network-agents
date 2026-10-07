@@ -24,6 +24,7 @@ const https = require('https');
 const { URL } = require('url');
 
 const REMEDIATION_LOG = path.join(__dirname, '..', '..', '..', 'artifacts', 'remediation-log.jsonl');
+const FATIGUE_SCRIPT  = path.join(__dirname, '..', '..', 'shared', 'tools', 'fault-fatigue.js');
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
@@ -155,6 +156,55 @@ function logLine(entry) {
   }
 
   console.log(`[remediate-all] done — attempted=${attempts} changed=${changed} skipped=${skipped}`);
+
+  // Record fatigue for faults that were attempted but had no effect
+  // Also handle the recheck lifecycle: if a rechecked fault was just retried,
+  // the record call will transition it appropriately.
+  if (attempts > 0) {
+    for (const f of faults) {
+      if (f.type === 'interference') continue; // skipped, not attempted
+      const fatigueResult = (() => {
+        // Check if this fault's remediation had no effect
+        const logLines = fs.existsSync(REMEDIATION_LOG)
+          ? fs.readFileSync(REMEDIATION_LOG, 'utf8').trim().split('\n').filter(Boolean).slice(-attempts)
+          : [];
+        for (const line of logLines) {
+          try {
+            const entry = JSON.parse(line);
+            if (entry.eventId === f.eventId) return entry.changed ? 'changed' : 'no_effect';
+          } catch { /* skip */ }
+        }
+        return 'no_effect';
+      })();
+      try {
+        const { execFileSync } = require('child_process');
+        const result = JSON.parse(execFileSync('node', [FATIGUE_SCRIPT, 'record', f.eventId, fatigueResult], { encoding: 'utf8' }));
+        if (result.state === 'fatigued') {
+          console.log(`[remediate-all] ⚠️ ${f.eventId} is now FATIGUED (${result.attempts} attempts) — stop retrying, escalate to stuck`);
+        } else if (result.state === 'stuck') {
+          console.log(`[remediate-all] ${f.eventId} returned to STUCK after recheck failed (${result.recheckAttempts} recheck attempts)`);
+        } else if (result.state === 'resolved') {
+          console.log(`[remediate-all] ✅ ${f.eventId} resolved on recheck!`);
+        }
+      } catch (e) {
+        // Fatigue tracking is best-effort; never block remediation on it
+        console.error(`[remediate-all] fatigue record failed for ${f.eventId}: ${e.message}`);
+      }
+    }
+  }
+
+  // Report fatigue lifecycle state so ARCHITECT knows what to do
+  try {
+    const { execFileSync } = require('child_process');
+    const fatiguedRaw = execFileSync('node', [FATIGUE_SCRIPT, 'check'], { encoding: 'utf8' });
+    const fatigueData = JSON.parse(fatiguedRaw);
+    if (fatigueData.fatiguedCount > 0) {
+      const fatiguedIds = fatigueData.grouped.fatigued?.map(f => f.eventId).join(', ') || 'none';
+      const stuckIds = fatigueData.grouped.stuck?.map(f => f.eventId).join(', ') || 'none';
+      const recheckIds = fatigueData.grouped.recheck?.map(f => f.eventId).join(', ') || 'none';
+      console.log(`[remediate-all] fatigue state: fatigued=[${fatiguedIds}] stuck=[${stuckIds}] recheck=[${recheckIds}]`);
+    }
+  } catch { /* best-effort */ }
 })().catch(e => {
   console.error(`[remediate-all] FATAL ${e.stack || e.message}`);
   process.exit(1);

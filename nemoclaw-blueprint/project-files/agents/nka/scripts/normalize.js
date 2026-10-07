@@ -1,6 +1,6 @@
 'use strict';
 /**
- * normalize.js — post-process raw EIAP artifacts into WebUI-ready format.
+ * normalize.js — post-process raw network API artifacts into WebUI-ready format.
  * Called by collect.sh after fetching raw data.
  * Writes: topology.json (normalized), performance.json (classified), alarms.json (classified), signals.json
  */

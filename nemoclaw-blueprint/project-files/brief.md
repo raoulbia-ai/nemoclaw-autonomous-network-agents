@@ -14,7 +14,8 @@ single OpenShell sandbox. The host runs nothing except the `openshell` CLI.
   playbooks. The most important is `remediate-all.js`, which drains the
   active fault queue from network ground truth (the agent never types IDs).
 - `agents/shared/tools/` — helpers shared across agents (bulletin board
-  posting, delta detection, self-assessment, run-state updates).
+  posting, delta detection, self-assessment, run-state updates, fault
+  fatigue lifecycle).
 - `nemoclaw-blueprint/` — sandbox build config: `blueprint.yaml` (sandbox
   + agent definitions), `policy.yaml` (filesystem + network egress),
   `cron-seed/jobs.json` (the three cron schedules), `playbooks/` (the
@@ -58,6 +59,28 @@ For urgent remediation, an agent can post a message with
 `priority: "urgent"` and `wakeTarget: "<AGENT>"`. A sandbox-internal
 watcher picks it up and patches the target's `nextRunAtMs` so the next
 gateway tick fires it immediately.
+
+## How agents handle unresolvable faults
+
+When automated remediation fails repeatedly, the agents follow a fatigue
+lifecycle to prevent amplification loops:
+
+```
+active → fatigued → stuck → recheck → (stuck | resolved)
+```
+
+- **active**: normal remediation in progress
+- **fatigued**: 3+ failed attempts. Agents stop retrying and de-escalate.
+- **stuck**: fault escalated to operators via a "STUCK FAULT ESCALATION"
+  meta message. Periodic recheck timer set (default 1 hour).
+- **recheck**: timer expired, one retry allowed. If it works → resolved.
+  If not → back to stuck with a new timer.
+
+State lives in `artifacts/fault-fatigue.json`, managed by
+`agents/shared/tools/fault-fatigue.js`. The event engine and network
+server clear fatigue when faults resolve naturally or via successful
+remediation. See `docs/20260410_fault-fatigue-design.md` for full
+rationale and the Kerry scenario replayed with fatigue.
 
 ## How the agents act on the network
 

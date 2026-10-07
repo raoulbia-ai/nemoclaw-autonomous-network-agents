@@ -88,14 +88,27 @@ why their schedule was altered.
 - Calm periods naturally restore to default intervals (less LLM cost)
 - Cron schedule is a floor (agents can't go below 1 min) but not a ceiling
 
+### Interaction with fault fatigue
+
+When a fault is **fatigued** or **stuck** (see `docs/20260410_fault-fatigue-design.md`),
+agents must NOT tighten pace for it. The pacing rules are overridden:
+
+- Fatigued faults: do NOT tighten ORACLE or ARCHITECT. Restore to defaults instead.
+- Stuck faults: do NOT tighten anyone. The fault is already escalated.
+- Recheck faults: do NOT tighten — this is a single retry, not an emergency.
+
+This prevents the "Kerry problem" where an unresolvable fault causes all three
+agents to stay at 2-minute emergency pace indefinitely, burning LLM tokens
+on repeated failed remediation.
+
 ### Interaction with gateway restart
 
-The gateway may restart periodically (e.g. for token refresh). The gateway
-MAY empty the cron store on restart.
+A token refresh script restarts the OpenClaw
+gateway every 45 minutes. The gateway MAY empty the cron store on restart.
 
-This should be handled by the restart process: check whether the cron store
-still has jobs after restart. If yes (dynamic pacing preserved), leave them
-alone. If empty, re-seed from the blueprint defaults.
+The refresh script handles this: it checks whether the cron store still has
+jobs after restart. If yes (dynamic pacing preserved), it leaves them alone.
+If empty, it re-seeds from the blueprint defaults.
 
 Dynamic pace changes write to `/sandbox/.openclaw/cron/jobs.json`. The
 gateway reads this file on each scheduler tick — no restart needed for

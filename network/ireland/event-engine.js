@@ -232,6 +232,11 @@ function tick(state, cells, now) {
   state.tickCount++;
 
   // 1. Resolve expired events; possibly leave ghost alarms
+  // Also clear fault fatigue for resolved events so agents don't de-escalate
+  // faults that have already been resolved.
+  const FATIGUE_FILE = path.join(__dirname, '..', '..', 'artifacts', 'fault-fatigue.json');
+  const fatiguedResolved = [];
+
   for (const evt of state.events) {
     if (evt.resolved) {
       // Expire any active ghost alarm
@@ -246,6 +251,7 @@ function tick(state, cells, now) {
     if (new Date(evt.resolveAt) <= now) {
       evt.resolved   = true;
       evt.resolvedAt = now.toISOString();
+      fatiguedResolved.push(evt.id);
 
       const label = evt.affectedCells.map(shortId).join(', ');
       console.log(`[event-engine] resolved ${evt.type} → ${label}`);
@@ -261,6 +267,50 @@ function tick(state, cells, now) {
         logEvent('ghost_alarm_created', evt, { expiresAt: evt.ghostAlarmExpiresAt });
       }
     }
+  }
+
+  // Clear fatigue for naturally-resolved faults
+  if (fatiguedResolved.length > 0) {
+    try {
+      if (fs.existsSync(FATIGUE_FILE)) {
+        const fatigueData = JSON.parse(fs.readFileSync(FATIGUE_FILE, 'utf8'));
+        for (const id of fatiguedResolved) {
+          if (fatigueData[id]) {
+            delete fatigueData[id];
+            console.log(`[event-engine] cleared fatigue for resolved event ${id}`);
+          }
+        }
+        const tmp = FATIGUE_FILE + '.tmp';
+        fs.writeFileSync(tmp, JSON.stringify(fatigueData, null, 2) + '\n');
+        fs.renameSync(tmp, FATIGUE_FILE);
+      }
+    } catch (e) {
+      console.error(`[event-engine] failed to clear fatigue: ${e.message}`);
+    }
+  }
+
+  // Transition stuck faults to recheck state when their timer expires
+  try {
+    if (fs.existsSync(FATIGUE_FILE)) {
+      const fatigueData = JSON.parse(fs.readFileSync(FATIGUE_FILE, 'utf8'));
+      let changed = false;
+      for (const [id, entry] of Object.entries(fatigueData)) {
+        if (entry.state !== 'stuck') continue;
+        if (!entry.nextRecheckAt) continue;
+        if (new Date(entry.nextRecheckAt).getTime() <= Date.now()) {
+          entry.state = 'recheck';
+          changed = true;
+          console.log(`[event-engine] fault ${id} → recheck due (was stuck since ${entry.escalatedAt})`);
+        }
+      }
+      if (changed) {
+        const tmp = FATIGUE_FILE + '.tmp';
+        fs.writeFileSync(tmp, JSON.stringify(fatigueData, null, 2) + '\n');
+        fs.renameSync(tmp, FATIGUE_FILE);
+      }
+    }
+  } catch (e) {
+    console.error(`[event-engine] failed to process recheck timers: ${e.message}`);
   }
 
   // 2. Prune old resolved events (keep 2 hours of history for context)

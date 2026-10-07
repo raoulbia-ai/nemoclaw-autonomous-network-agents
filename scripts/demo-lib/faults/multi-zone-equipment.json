@@ -1,0 +1,19 @@
+{
+  "id": "evt-DEMO-001",
+  "type": "equipment_fault",
+  "durationHours": 2,
+  "ghostAlarm": true,
+  "alarmId": "ALM-DEMO-001",
+  "affectedCells": [
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Cork-01-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=51",
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Cork-01-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=52",
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Cork-01-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=53",
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Galway-01-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=56",
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Galway-01-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=57",
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=1",
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-001,ManagedElement=1,GNBDUFunction=1,NRCellDU=2",
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-002,ManagedElement=1,GNBDUFunction=1,NRCellDU=6",
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-003,ManagedElement=1,GNBDUFunction=1,NRCellDU=11",
+    "urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-004,ManagedElement=1,GNBDUFunction=1,NRCellDU=16"
+  ]
+}

@@ -64,30 +64,15 @@ const fs   = require('fs');
 const path = require('path');
 const url  = require('url');
 
-const data           = require('./data-ireland');
-const networkState   = require('./ireland/state');
-const pmGenerator    = require('./ireland/pm-generator');
-const alarmGenerator = require('./ireland/alarm-generator');
+const domain = require('../domain');
 
 const REBUILD_STATUS_FILE = path.join(__dirname, '..', 'artifacts', 'rebuild-status.json');
 const PORT         = parseInt(process.env.NETWORK_PORT || '8090', 10);
 const NETWORK_HOST = process.env.NETWORK_HOST || '0.0.0.0';
 const MOCK_TOKEN   = 'mock-bearer-token';
 
-// State cache: avoids hammering the disk on rapid PM/FM polls.
-// Bypassed by remediate handlers (they always read fresh and invalidate
-// the cache after a write).
-let _stateCache = null;
-let _stateCacheAt = 0;
-const STATE_CACHE_TTL = 5_000;
-function getNetworkState() {
-  const now = Date.now();
-  if (!_stateCache || now - _stateCacheAt > STATE_CACHE_TTL) {
-    _stateCache   = networkState.load();
-    _stateCacheAt = now;
-  }
-  return _stateCache;
-}
+// State cache is now in domain/state.js — domain.state.loadCached() for reads,
+// domain.state.loadFresh() + invalidateCache() for mutations.
 
 // ---------------------------------------------------------------------------
 // Tiny response helpers (replacing express's res.json / res.status().json())
@@ -119,18 +104,7 @@ function requireAuth(req) {
   return !!(auth && auth.startsWith('Bearer '));
 }
 
-// ---------------------------------------------------------------------------
-// 3GPP cell URN parser
-// ---------------------------------------------------------------------------
-//
-//   urn:3gpp:dn:SubNetwork=Ireland,MeContext=Dublin-City-Centre-007,
-//     ManagedElement=1,GNBDUFunction=1,NRCellDU=31
-//   → { siteId: 'Dublin-City-Centre-007', cellId: 'NRCellDU-31' }
-function parseCellUrn(urn) {
-  const site = (urn.match(/MeContext=([^,]+)/) || [])[1] || null;
-  const cell = (urn.match(/NRCellDU=([^,]+)/) || [])[1] || null;
-  return { siteId: site, cellId: cell ? `NRCellDU-${cell}` : null };
-}
+// 3GPP URN parsing moved to domain/urn.js — domain.urn.parseCellUrn()
 
 // ---------------------------------------------------------------------------
 // Handlers
@@ -147,19 +121,19 @@ function handleAuthToken(req, res) {
 }
 
 function handleTopology(req, res) {
-  sendJson(res, 200, data.topology.cells);
+  sendJson(res, 200, domain.cells.getTopology());
 }
 
 function handlePmCells(req, res) {
-  sendJson(res, 200, pmGenerator.generate(data.cells, getNetworkState(), new Date()));
+  sendJson(res, 200, domain.pm.generate(domain.cells.getCells(), domain.state.loadCached(), new Date()));
 }
 
 function handleFmAlarms(req, res) {
-  sendJson(res, 200, alarmGenerator.generate(data.cells, getNetworkState(), new Date()));
+  sendJson(res, 200, domain.alarms.generate(domain.cells.getCells(), domain.state.loadCached(), new Date()));
 }
 
 function handleFaultsActive(req, res, query) {
-  const state = networkState.load();
+  const state = domain.state.loadFresh();
   if (!state) return sendJson(res, 503, { error: 'network state unavailable' });
 
   const wantType = (query && query.type) || null;
@@ -171,7 +145,7 @@ function handleFaultsActive(req, res, query) {
     const sites = new Set();
     const cells = [];
     for (const urn of evt.affectedCells) {
-      const { siteId, cellId } = parseCellUrn(urn);
+      const { siteId, cellId } = domain.urn.parseCellUrn(urn);
       if (siteId) sites.add(siteId);
       if (cellId) cells.push(cellId);
     }
@@ -211,7 +185,7 @@ function handleRemediateCell(req, res, query) {
     return badRequest(res, 'action must be clear-alarm or restart-cell');
   }
 
-  const state = networkState.load();
+  const state = domain.state.loadFresh();
   if (!state) return sendJson(res, 503, { error: 'network state unavailable' });
 
   // Accept short id ("NRCellDU-31") or full URN; normalise to NRCellDU-N
@@ -265,8 +239,21 @@ function handleRemediateCell(req, res, query) {
   }
 
   if (changed) {
-    networkState.save(state);
-    _stateCache = null;
+    domain.state.save(state);
+    domain.state.invalidateCache();
+    // Clear fault fatigue for this event — remediation succeeded
+    try {
+      const fatigueFile = path.join(__dirname, '..', 'artifacts', 'fault-fatigue.json');
+      if (fs.existsSync(fatigueFile)) {
+        const fatigueData = JSON.parse(fs.readFileSync(fatigueFile, 'utf8'));
+        if (fatigueData[eventId]) {
+          delete fatigueData[eventId];
+          const tmp = fatigueFile + '.tmp';
+          fs.writeFileSync(tmp, JSON.stringify(fatigueData, null, 2) + '\n');
+          fs.renameSync(tmp, fatigueFile);
+        }
+      }
+    } catch { /* best-effort: never block remediation on fatigue cleanup */ }
   }
   sendJson(res, 200, { changed, cellId: `NRCellDU-${wantNum}`, action, eventId, result });
 }
@@ -276,7 +263,7 @@ function handleRemediateBackhaul(req, res, query) {
   if (!siteId) return badRequest(res, 'siteId required');
 
   // Always read fresh — bypass the 5s cache so we don't clobber recent ticks.
-  const state = networkState.load();
+  const state = domain.state.loadFresh();
   if (!state) return sendJson(res, 503, { error: 'network state unavailable' });
 
   const now = new Date();
@@ -304,8 +291,21 @@ function handleRemediateBackhaul(req, res, query) {
   }
 
   if (changed) {
-    networkState.save(state);
-    _stateCache = null;
+    domain.state.save(state);
+    domain.state.invalidateCache();
+    // Clear fault fatigue for this event — remediation succeeded
+    try {
+      const fatigueFile = path.join(__dirname, '..', 'artifacts', 'fault-fatigue.json');
+      if (fs.existsSync(fatigueFile)) {
+        const fatigueData = JSON.parse(fs.readFileSync(fatigueFile, 'utf8'));
+        if (fatigueData[eventId]) {
+          delete fatigueData[eventId];
+          const tmp = fatigueFile + '.tmp';
+          fs.writeFileSync(tmp, JSON.stringify(fatigueData, null, 2) + '\n');
+          fs.renameSync(tmp, fatigueFile);
+        }
+      }
+    } catch { /* best-effort: never block remediation on fatigue cleanup */ }
     return sendJson(res, 200, { changed: true, siteId, eventId, result });
   }
 

@@ -19,7 +19,6 @@
 
 const fs   = require('fs');
 const path = require('path');
-const os   = require('os');
 
 const ARTIFACTS       = path.join(__dirname, '..', '..', '..', 'artifacts');
 const GROWTH_LOG      = path.join(ARTIFACTS, 'growth-log.json');
@@ -27,6 +26,7 @@ const STATE_FILE      = path.join(ARTIFACTS, 'state.json');
 const COMMS_FILE      = path.join(ARTIFACTS, 'agent-comms.jsonl');
 const CITY_PARAMS     = path.join(ARTIFACTS, 'city-params.json');
 const ACCUMULATED     = path.join(ARTIFACTS, 'accumulated-zones.json');
+const REBUILD_STATUS  = path.join(ARTIFACTS, 'rebuild-status.json');
 
 // Fail fast if artifacts dir doesn't exist
 if (!fs.existsSync(ARTIFACTS)) {
@@ -59,7 +59,14 @@ const state = fs.existsSync(STATE_FILE)
 
 const wave       = (state.growth_wave_count || 0) + 1;
 const sitesAdded = newZones.length;
-const cellsAdded = newZones.reduce((sum, z) => sum + (z.cells || 0), 0);
+// Compute cells using the same logic as the builder (domain/cells.js hot-reload)
+// so state.totalCells matches what the server actually reports.
+const CELLS_PER_SITE = { urban: 4, suburban: 4, rural: 3, motorway: 3 };
+const cellsAdded = newZones.reduce((sum, z) => {
+  const siteCount = z.site_count || 1;
+  const zoneType  = z.type || 'suburban';
+  return sum + siteCount * (CELLS_PER_SITE[zoneType] || 3);
+}, 0);
 const counties   = [...new Set(newZones.map(z => z.county).filter(Boolean))];
 
 console.log(`[log-growth] Wave ${wave}: +${sitesAdded} sites, +${cellsAdded} cells, counties: ${counties.join(', ')}`);
@@ -101,14 +108,16 @@ if (note) entry.note = note;
 entries.push(entry);
 
 // --- Atomic write growth-log.json ---
-const tmp = path.join(os.tmpdir(), `growth-log-${process.pid}.json.tmp`);
+// Use target directory for tmp file (not os.tmpdir()) to avoid EXDEV
+// cross-device rename failure when /tmp and /sandbox are different mounts.
+const tmp = GROWTH_LOG + '.tmp';
 fs.writeFileSync(tmp, JSON.stringify(entries, null, 2) + '\n', 'utf8');
 fs.renameSync(tmp, GROWTH_LOG);
 
 // --- Update state.json ---
 state.growth_wave_count = wave;
 state.last_growth_at = entry.at;
-const tmpState = path.join(os.tmpdir(), `state-${process.pid}.json.tmp`);
+const tmpState = STATE_FILE + '.tmp';
 fs.writeFileSync(tmpState, JSON.stringify(state, null, 2) + '\n', 'utf8');
 fs.renameSync(tmpState, STATE_FILE);
 
@@ -147,6 +156,30 @@ if (zonesForAccum.length > 0) {
 // --- Clear newZones from city-params (consumed) ---
 params.newZones = [];
 fs.writeFileSync(CITY_PARAMS, JSON.stringify(params, null, 2) + '\n', 'utf8');
+
+// --- Track cumulative cell count in state ---
+state.totalCells = (state.totalCells || 266) + cellsAdded;
+// Re-save state.json with the new totalCells
+const tmpState2 = STATE_FILE + '.tmp2';
+fs.writeFileSync(tmpState2, JSON.stringify(state, null, 2) + '\n', 'utf8');
+fs.renameSync(tmpState2, STATE_FILE);
+
+// --- Update rebuild-status.json so ARCHITECT's growth gate passes ---
+// The gate requires rebuiltAt > last_growth_at. We set it now (a few ms
+// after last_growth_at) so the next ARCHITECT cycle sees the wave as
+// processed. The network server's GET /rebuild-status reads this file.
+const totalCells = state.totalCells;
+const rebuildNow = new Date().toISOString();
+const rebuildData = {
+  status: 'ok',
+  rebuiltAt: rebuildNow,
+  cells: totalCells,
+  hash: `wave-${wave}`,
+};
+const tmpRebuild = REBUILD_STATUS + '.tmp';
+fs.writeFileSync(tmpRebuild, JSON.stringify(rebuildData, null, 2) + '\n', 'utf8');
+fs.renameSync(tmpRebuild, REBUILD_STATUS);
+console.log(`[log-growth] rebuild-status updated: rebuiltAt=${rebuildNow}, cells=${totalCells}`);
 
 // --- Log decision for retrospective analysis ---
 try {

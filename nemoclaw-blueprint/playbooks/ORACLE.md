@@ -22,6 +22,7 @@ This returns JSON with:
 - `state`: atlas_cycle_count, growth_wave_count, last_growth_at
 - `memory`: current MEMORY.md content (chronic cells, persistent cells)
 - `external_context`: weather, warnings, activeEvents, zoneRisks
+- `fatigue`: fatigued/stuck/recheck fault lists with state, attempts, and nextRecheckAt
 
 Do NOT read these files individually — the combined reader provides everything in one call.
 
@@ -44,6 +45,11 @@ Counts: outliers, elevated, normal. List any chronic cells with streak count and
 Active alarms by severity. Cross-zone hit cells (flagged by both performance and alarm systems).
 Reference which SENTINEL cycles surfaced these.
 
+## Stuck Faults
+List any faults in stuck or recheck state (from fatigue data). For each: eventId, type, how many
+remediation attempts failed, when the next recheck is due, and what the fault affects.
+This section is the stuck-fault dashboard — it makes unresolvable faults visible to operators.
+
 ## Trend
 What has SENTINEL reported over the last few cycles? Is degradation worsening, stable, or recovering?
 
@@ -57,6 +63,7 @@ Explain how each external factor may affect network load or fault interpretation
 1–3 specific, actionable items. These can include:
 - Growth advice for ARCHITECT (which zones to avoid or prioritise)
 - Remediation recommendations: "Recommend ARCHITECT clear ghost alarm on <cellId>" or "Recommend ARCHITECT reroute backhaul on <siteId>"
+- For stuck faults: "No automated remediation available for <eventId>. Human intervention required."
 - Use remediation language when: a ghost alarm is stale (alarm active but PM counters normal), a backhaul fault is causing interference spread to neighbours, or a chronic cell could be resolved by a restart
 
 Then copy to artifacts/atlas-history/atlas-<YYYY-MM-DD-HHmm>.md
@@ -72,17 +79,36 @@ Then, if chronic cells exist OR network risk is elevated OR SENTINEL flagged spe
 - **URGENT** if ANY of: crossZoneHits > 5, alarms spreading across 3+ counties, cascading backhaul failure, or multiple cells below 80% availability. This wakes ARCHITECT immediately (~35 seconds) instead of waiting up to 30 minutes.
 - **NORMAL** otherwise
 
+**Fatigue rules — these override the default severity:**
+
+For **fatigued** faults (state=fatigued):
+- Do NOT include them in URGENT advisories. NORMAL only.
+- Do NOT re-tighten ARCHITECT's pace for fatigued faults.
+- Change language: "ESCALATE: <eventId> (<faultType>) — automated remediation failed after N attempts. Needs human intervention or new approach. Do NOT re-attempt remediation."
+- Do NOT say "REMEDIATE" for fatigued faults.
+
+For **stuck** faults (state=stuck):
+- NORMAL advisory only. They are already escalated.
+- Language: "MONITOR: <eventId> — stuck fault under periodic recheck. Next recheck due <time>. No automated action available."
+
+For **recheck** faults (state=recheck):
+- A recheck is due — this is a legitimate reason to tell ARCHITECT to retry remediation for this specific fault.
+- If the signals show material change (different pattern than when the fault got stuck), include: "RECHECK: <eventId> — new evidence detected. ARCHITECT may attempt remediate-all.js for this fault. One retry allowed."
+- If signals are unchanged, do NOT recommend recheck retry.
+
+If ALL the issues you'd flag as URGENT are fatigued or stuck, the advisory must be NORMAL, not URGENT.
+
 For NORMAL advisory:
-node agents/shared/tools/post-comms.js '{"agent":"ORACLE","type":"advisory","to":"ARCHITECT","validFor":24,"message":"AVOID: <counties with active issues>. SAFE TO EXPAND: <counties with NO issues>. REMEDIATE: <exact cell IDs and actions>. <1 sentence summary>."}'
+node agents/shared/tools/post-comms.js '{"agent":"ORACLE","type":"advisory","to":"ARCHITECT","validFor":24,"message":"AVOID: <counties with active issues>. SAFE TO EXPAND: <counties with NO issues>. REMEDIATE: <exact cell IDs and actions for non-fatigued faults>. ESCALATE: <fatigued fault IDs>. MONITOR: <stuck fault IDs>. <1 sentence summary>."}'
 
 For URGENT advisory (wakes ARCHITECT immediately):
-node agents/shared/tools/post-comms.js '{"agent":"ORACLE","type":"advisory","to":"ARCHITECT","priority":"urgent","wakeTarget":"ARCHITECT","validFor":4,"message":"URGENT REMEDIATION: <exact cell IDs and actions>. AVOID: <counties>. SAFE TO EXPAND: <counties>. <reason for urgency>."}'
+node agents/shared/tools/post-comms.js '{"agent":"ORACLE","type":"advisory","to":"ARCHITECT","priority":"urgent","wakeTarget":"ARCHITECT","validFor":4,"message":"URGENT REMEDIATION: <exact cell IDs and actions for NON-FATIGUED faults only>. AVOID: <counties>. SAFE TO EXPAND: <counties>. <reason for urgency>."}'
 
 IMPORTANT: Always include both AVOID and SAFE TO EXPAND lists based on YOUR analysis of the network data. Do not hardcode county lists. Isolated chronic issues in specific cells should NOT block growth in unrelated counties. Only recommend deferring ALL growth if there is systemic instability (alarms spreading across many counties, active storm warnings, cascading failures).
 
-## Step 4 — Adjust pacing
+## Step 4 — Adjust pacing and manage fatigue lifecycle
 
-If you posted an URGENT advisory: tighten ARCHITECT's schedule so it responds faster.
+If you posted an URGENT advisory (for non-fatigued faults): tighten ARCHITECT's schedule so it responds faster.
 node agents/shared/tools/set-cron-pace.js architect 2 "<reason>"
 
 If the network is stable (no remediation needed, no chronic cells, no urgent triggers):
@@ -91,6 +117,25 @@ node agents/shared/tools/set-cron-pace.js architect 30 "network stable"
 
 You may also tighten your own schedule to monitor a developing situation:
 node agents/shared/tools/set-cron-pace.js oracle 5 "monitoring degradation trend"
+
+**Fatigue and stuck-fault management:**
+
+If fatigue.fatiguedCount > 0 (faults that need escalation):
+- Restore ARCHITECT to default pace:
+node agents/shared/tools/set-cron-pace.js architect 30 "faults fatigued, de-escalating"
+- Restore yourself to default pace if you were tightened:
+node agents/shared/tools/set-cron-pace.js oracle 15 "faults fatigued, de-escalating"
+- Acknowledge the escalation (confirms SENTINEL's escalation was seen):
+node agents/shared/tools/fault-fatigue.js acknowledge <eventId>
+
+If fatigue.stuckCount > 0 (faults already escalated):
+- Do NOT tighten anyone's pace for stuck faults.
+- Post a periodic stuck-fault summary (once per atlas cycle, not per fault):
+node agents/shared/tools/post-comms.js '{"agent":"ORACLE","type":"meta","message":"STUCK FAULT SUMMARY: <N> fault(s) remain stuck despite automated remediation. Event IDs: <list>. These require human intervention or tools not available in the system. Next recheck in <time>."}'
+
+If fatigue.recheckCount > 0 (faults due for recheck):
+- Tell ARCHITECT a recheck is warranted in the advisory (see Step 3).
+- Do NOT tighten pace — this is a single retry, not an emergency.
 
 ## Step 5 — Update MEMORY.md
 

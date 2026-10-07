@@ -54,6 +54,30 @@ function readUrgentTrigger(agentName) {
 
 // --- Agent-specific readers ---
 
+function readFatigue() {
+  const file = path.join(ARTIFACTS, 'fault-fatigue.json');
+  const data = readJSON(file);
+  if (!data) return { fatiguedEvents: [], fatiguedCount: 0, stuckEvents: [], stuckCount: 0, recheckEvents: [], recheckCount: 0 };
+  const fatigued = [];
+  const stuck = [];
+  const recheck = [];
+  for (const [eventId, e] of Object.entries(data)) {
+    const entry = { eventId, state: e.state, attempts: e.attempts, lastResult: e.lastResult, faultType: e.faultType || null };
+    if (e.nextRecheckAt) entry.nextRecheckAt = e.nextRecheckAt;
+    if (e.state === 'fatigued') fatigued.push(entry);
+    else if (e.state === 'stuck') stuck.push(entry);
+    else if (e.state === 'recheck') recheck.push(entry);
+  }
+  return {
+    fatiguedEvents: fatigued,
+    fatiguedCount: fatigued.length,
+    stuckEvents: stuck,
+    stuckCount: stuck.length,
+    recheckEvents: recheck,
+    recheckCount: recheck.length,
+  };
+}
+
 function sentinelInputs() {
   // SENTINEL-FAST.md only needs gateway/agent status — those are openclaw CLI calls,
   // not file reads. But we can still bundle signals for context.
@@ -63,6 +87,7 @@ function sentinelInputs() {
     signals: readJSON(path.join(ARTIFACTS, 'signals.json')),
     state: readJSON(path.join(ARTIFACTS, 'state.json')),
     recent_comms: readCommsLast(5, null),
+    fatigue: readFatigue(),
   };
 }
 
@@ -78,6 +103,8 @@ function oracleInputs() {
     memory: readFile(path.join(ROOT, 'MEMORY.md')),
     // Step 3: external context
     external_context: readJSON(path.join(ARTIFACTS, 'external-context.json')),
+    // Fatigue: faults that have been remediation-attempted 3+ times with no effect
+    fatigue: readFatigue(),
   };
 }
 
@@ -105,6 +132,8 @@ function architectInputs() {
     external_context: readJSON(path.join(ARTIFACTS, 'external-context.json')),
     // Step 4: city-params (needed if growing)
     city_params: readJSON(path.join(ARTIFACTS, 'city-params.json')),
+    // Fatigue: faults that should NOT be re-attempted
+    fatigue: readFatigue(),
   };
 }
 
